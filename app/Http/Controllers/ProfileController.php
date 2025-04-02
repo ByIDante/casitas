@@ -12,12 +12,34 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
+     * Display the user's profile overview.
+     */
+    public function show(Request $request): View
+    {
+        $user = Auth::user();
+
+        try {
+            $properties = $user->properties()->with(['images'])->latest()->take(6)->get();
+        } catch (\Exception $e) {
+            $properties = collect([]);
+        }
+        return view('profile.show', [
+            'user' => $user,
+            'properties' => $properties,
+        ]);
+    }
+
+    /**
      * Display the user's profile form.
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $properties = $user->properties()->latest()->take(4)->get();
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'properties' => $properties,
         ]);
     }
 
@@ -26,13 +48,14 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = Auth::user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
