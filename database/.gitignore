@@ -1,2 +1,3 @@
 *.sqlite*
-/schema
+/database/*.sqlite
+database.sqlite
